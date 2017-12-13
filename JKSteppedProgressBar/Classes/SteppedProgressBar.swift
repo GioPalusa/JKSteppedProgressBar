@@ -78,14 +78,8 @@ open class SteppedProgressBar: UIView {
         }
     }
     
-    open var insets: UIEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0) {
-        didSet {
-            self.setNeedsDisplay()
-        }
-    }
-    
     private var actualSpacing: CGFloat {
-        return (circleSpacing == SteppedProgressBarAutomaticDimension) ? (availableFrame.width - 6.0 - (CGFloat(titles.count) * circleRadius)) / CGFloat(titles.count - 1) : circleSpacing
+        return (circleSpacing == SteppedProgressBarAutomaticDimension) ? (frame.width - 6.0 - (CGFloat(titles.count) * circleRadius)) / CGFloat(titles.count - 1) : circleSpacing
     }
     
     open var titles = ["One", "Two","Three", "Four","Five", "Six"] {
@@ -94,20 +88,6 @@ open class SteppedProgressBar: UIView {
         }
     }
     
-    var availableFrame: CGRect {
-        var correctedFrame = bounds
-        correctedFrame.origin.x = insets.left
-        correctedFrame.origin.y = insets.top
-        
-        correctedFrame.size.width -= insets.left + insets.right
-        correctedFrame.size.height -= insets.top + insets.bottom
-        
-        return correctedFrame
-    }
-    
-    private var languageFactor: CGFloat {
-        return (UIApplication.shared.userInterfaceLayoutDirection == .rightToLeft) ? -1 : 1
-    }
     override open func awakeFromNib() {
         super.awakeFromNib()
         paragraphStyle.alignment = .center
@@ -132,7 +112,7 @@ open class SteppedProgressBar: UIView {
             path.lineWidth = lineWidth
             
             var start = end
-            start.x -= languageFactor * actualSpacing
+            start.x -= actualSpacing
             path.move(to: start)
             path.addLine(to: end)
             context?.setStrokeColor(inactiveColor.cgColor)
@@ -145,12 +125,11 @@ open class SteppedProgressBar: UIView {
     
     @discardableResult
     func drawTabs(from begin: Int, to end: Int, color: UIColor, textColor: UIColor) -> (start: CGPoint, end: CGPoint) {
-        let halfX = (CGFloat(titles.count - 1) * (actualSpacing + circleRadius) / 2.0)
-        let startX =  availableFrame.midX - languageFactor * halfX
-        let x = startX + languageFactor * (actualSpacing + circleRadius) * CGFloat(begin)
-        var point = CGPoint(x: x, y: availableFrame.midY)
+        let startX =  bounds.midX - (CGFloat(titles.count - 1) * (actualSpacing + circleRadius) / 2.0)
+        let x = startX + (actualSpacing + circleRadius) * CGFloat(begin)
+        var point = CGPoint(x: x, y: bounds.midY)
         var start = point
-        start.x -= languageFactor * circleRadius / 2.0
+        start.x -= circleRadius / 2.0
         
         let path = UIBezierPath()
         path.lineWidth = lineWidth
@@ -158,9 +137,9 @@ open class SteppedProgressBar: UIView {
             draw(step: i, path: path, start : &point, textColor: textColor)
             if i != (end - 1) {
                 //draw trailinng line
-                point.x += languageFactor * actualSpacing
+                point.x += actualSpacing
                 path.addLine(to: point)
-                point.x += languageFactor * circleRadius / 2.0
+                point.x += circleRadius / 2.0
             }
         }
         let context = UIGraphicsGetCurrentContext()
@@ -170,7 +149,6 @@ open class SteppedProgressBar: UIView {
         if stepDrawingMode == .fill {
             path.fill()
         }
-
         return (start: start, end: point)
     }
     
@@ -180,14 +158,14 @@ open class SteppedProgressBar: UIView {
         let buttonRect = circleRect(point, radius: circleRadius)
         let circlePath = UIBezierPath(ovalIn: buttonRect)
         
-        var attributes = [NSForegroundColorAttributeName : textColor, NSParagraphStyleAttributeName: paragraphStyle]
+        var attributes = [NSAttributedStringKey.foregroundColor : textColor, NSAttributedStringKey.paragraphStyle: paragraphStyle]
 
         //draw index
         let index =  i
         if stepDrawingMode == .drawIndex {
             let buttonTitle = "\(index + 1)"
             let font = UIFont.boldSystemFont(ofSize: 14.0)
-            attributes[NSFontAttributeName] = font
+            attributes[NSAttributedStringKey.font] = font
             let attributedButtonTitle = NSAttributedString(string: buttonTitle, attributes: attributes)
             draw(string: attributedButtonTitle, center: point)
         }
@@ -196,11 +174,11 @@ open class SteppedProgressBar: UIView {
         var titleCenter = point
         titleCenter.y += circleRadius * 0.75 + titleOffset
         let title = titles[index]
-        attributes[NSFontAttributeName] = UIFont.boldSystemFont(ofSize: 12.0)
+        attributes[NSAttributedStringKey.font] = UIFont.boldSystemFont(ofSize: 12.0)
         let attributedTitle = NSAttributedString(string: title, attributes: attributes)
         draw(string: attributedTitle, center: titleCenter)
         
-        point.x += languageFactor * circleRadius / 2.0
+        point.x += circleRadius / 2.0
         path.move(to: point)
         
     }
